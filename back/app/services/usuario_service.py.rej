@@ -1,0 +1,65 @@
+diff a/back/app/services/usuario_service.py b/back/app/services/usuario_service.py	(rejected hunks)
+@@ -1,9 +1,24 @@
++from datetime import datetime
+ from fastapi import HTTPException, status
+ from sqlalchemy.orm import Session
+-from app.repositories import usuario_repository
+-from app.schemas.usuario import UsuarioCreate, UsuarioResponse
++from app.models.usuario import Usuario
++from app.repositories import rol_repository, usuario_repository
++from app.schemas.usuario import UsuarioCreate, UsuarioUpdate, UsuarioResponse
+ from app.core.security import hash_password
+ 
++NOMBRE_ROL_ADMINISTRADOR = "administrador"
++
++
++def _validar_rol_permitido(db: Session, id_rol: int) -> None:
++    """Impide asignar el rol de Administrador desde el alta/edición de
++    usuarios: un administrador no puede designar a otro administrador."""
++    rol = rol_repository.get_by_id(db, id_rol)
++    if rol and rol.nombre_rol.strip().lower() == NOMBRE_ROL_ADMINISTRADOR:
++        raise HTTPException(
++            status_code=status.HTTP_403_FORBIDDEN,
++            detail="No está permitido asignar el rol de Administrador a otro usuario",
++        )
++
+ 
+ def get_all(db: Session, skip: int = 0, limit: int = 100) -> list[UsuarioResponse]:
+     usuarios = usuario_repository.get_all(db, skip=skip, limit=limit)
+@@ -26,8 +41,7 @@ def create(db: Session, data: UsuarioCreate) -> UsuarioResponse:
+             status_code=status.HTTP_400_BAD_REQUEST,
+             detail="El correo ya está registrado",
+         )
+-    from app.models.usuario import Usuario
+-    from datetime import datetime
++    _validar_rol_permitido(db, data.id_rol)
+ 
+     usuario = Usuario(
+         id_rol=data.id_rol,
+@@ -41,15 +55,22 @@ def create(db: Session, data: UsuarioCreate) -> UsuarioResponse:
+     return UsuarioResponse.model_validate(usuario)
+ 
+ 
+-def update(db: Session, id_usuario: int, data: dict) -> UsuarioResponse:
++def update(db: Session, id_usuario: int, data: UsuarioUpdate) -> UsuarioResponse:
+     usuario = usuario_repository.get_by_id(db, id_usuario)
+     if not usuario:
+         raise HTTPException(
+             status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado"
+         )
+-    if "contrasena" in data:
+-        data["contrasena"] = hash_password(data["contrasena"])
+-    usuario = usuario_repository.update(db, usuario, data)
++
++    cambios = data.model_dump(exclude_unset=True)
++
++    if "id_rol" in cambios:
++        _validar_rol_permitido(db, cambios["id_rol"])
++
++    if "contrasena" in cambios:
++        cambios["contrasena"] = hash_password(cambios["contrasena"])
++
++    usuario = usuario_repository.update(db, usuario, cambios)
+     return UsuarioResponse.model_validate(usuario)
+ 
+ 

@@ -1,0 +1,19 @@
+diff a/front/src/views/admin/AppLayout.tsx b/front/src/views/admin/AppLayout.tsx	(rejected hunks)
+@@ -19,17 +19,6 @@ import { APP_LOGIN } from "../../constants/authRoutesConstants";
+ import type { RootState } from "../../store";
+ import { logout } from "../../store/authSlice";
+ 
+-// ─── Mapa de iconos ───────────────────────────────────────────────────────────
+-const ICON_MAP: Record<string, React.ReactNode> = {
+-  LayoutDashboard: <LayoutDashboard size={16} />,
+-  Users: <Users size={16} />,
+-  Shield: <Shield size={16} />,
+-  MapPin: <MapPin size={16} />,
+-  Camera: <Camera size={16} />,
+-  Shirt: <Shirt size={16} />,
+-  Siren: <Siren size={16} />,
+-};
+-
+ // ─── Items de navegación por rol ──────────────────────────────────────────────
+ interface NavItem {
+   path: string;

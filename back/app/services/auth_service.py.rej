@@ -1,0 +1,77 @@
+diff a/back/app/services/auth_service.py b/back/app/services/auth_service.py	(rejected hunks)
+@@ -1,13 +1,23 @@
++import logging
++from datetime import datetime, timedelta
+ from sqlalchemy.orm import Session
++from app.core.config import settings
++from app.core.mail import EnvioCorreoError, enviar_correo_recuperacion
++from app.repositories import recuperacion_password_repository as recuperacion_repo
+ from app.repositories.usuario_repository import get_by_correo, get_by_id
+ from app.repositories.permiso_repository import get_permisos_by_rol
+ from app.core.security import (
+     verify_password,
++    hash_password,
+     create_access_token,
+     create_refresh_token,
+     decode_token,
++    generar_token_recuperacion,
++    hash_token,
+ )
+ 
++logger = logging.getLogger(__name__)
++
+ 
+ def login(db: Session, correo: str, contrasena: str) -> tuple | None:
+     # 1. Buscar usuario por correo
+@@ -68,3 +78,51 @@ def refresh_token(db: Session, refresh_token_str: str) -> str | None:
+         "permisos": permisos,
+     }
+     return create_access_token(access_payload)
++
++
++def solicitar_recuperacion(db: Session, correo: str) -> None:
++    """Genera y envía un token de recuperación si el correo existe.
++
++    No revela si el correo está registrado o no: el router siempre
++    responde el mismo mensaje genérico, exista o no la cuenta.
++    """
++    user = get_by_correo(db, correo)
++    if not user:
++        return
++
++    # Invalida tokens anteriores no usados: solo el último pedido es válido.
++    recuperacion_repo.invalidar_anteriores(db, user.id_usuario)
++
++    token_plano, token_hash = generar_token_recuperacion()
++    expiracion = datetime.utcnow() + timedelta(
++        minutes=settings.RESET_TOKEN_EXPIRE_MINUTES
++    )
++    recuperacion_repo.create(db, user.id_usuario, token_hash, expiracion)
++
++    try:
++        enviar_correo_recuperacion(user.correo, token_plano)
++    except EnvioCorreoError as exc:
++        # No se relanza como error HTTP: si lo hiciéramos, un atacante
++        # podría distinguir "correo existe pero SMTP falló" (500) de
++        # "correo no existe" (200) y así enumerar correos registrados.
++        # El problema de configuración queda en el log del servidor.
++        logger.warning("No se pudo enviar el correo de recuperación: %s", exc)
++
++
++def restablecer_password(db: Session, token: str, nueva_contrasena: str) -> bool:
++    """Valida el token de recuperación y actualiza la contraseña.
++
++    Devuelve False si el token no existe, ya fue usado o expiró.
++    """
++    registro = recuperacion_repo.get_by_token_hash(db, hash_token(token))
++    if not registro or registro.usado or registro.fecha_expiracion < datetime.utcnow():
++        return False
++
++    user = get_by_id(db, registro.id_usuario)
++    if not user:
++        return False
++
++    user.contrasena = hash_password(nueva_contrasena)
++    db.commit()
++    recuperacion_repo.marcar_usado(db, registro)
++    return True

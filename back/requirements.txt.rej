@@ -1,0 +1,9 @@
+diff a/back/requirements.txt b/back/requirements.txt	(rejected hunks)
+@@ -4,6 +4,7 @@ sqlalchemy>=2.0.0
+ psycopg2-binary>=2.9.0
+ aiosqlite>=0.20.0
+ pydantic-settings>=2.0.0
++pydantic[email]>=2.0.0
+ python-jose[cryptography]>=3.3.0
+ passlib[bcrypt]>=1.7.4
+ bcrypt<5.0.0

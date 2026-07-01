@@ -1,0 +1,14 @@
+{
+  "folders": [
+	{
+		"path": "."
+	},
+	{
+		"path": "../figma"
+	},
+	{
+		"path": "../back"
+	}
+],
+  "settings": {}
+}

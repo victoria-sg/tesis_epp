@@ -1,0 +1,14 @@
+// ─── Rutas de la API de autenticación ─────────────────────────────────────────
+
+export const AUTH_LOGIN = "/auth/login";
+export const AUTH_REFRESH = "/auth/refresh";
+export const AUTH_SOLICITAR_RECUPERACION = "/auth/solicitar-recuperacion";
+export const AUTH_RESTABLECER_PASSWORD = "/auth/restablecer-password";
+
+// ─── Rutas de la aplicación ───────────────────────────────────────────────────
+
+export const APP_LOGIN = "/login";
+export const APP_DASHBOARD = "/dashboard";
+export const APP_RESET_PASSWORD = "/reset-password";
+export const APP_RESET_PASSWORD_CONFIRM = "/reset-password/confirmar";
+export const APP_ROOT = "/";

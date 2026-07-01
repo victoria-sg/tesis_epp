@@ -1,0 +1,22 @@
+diff a/front/src/models/auth.model.ts b/front/src/models/auth.model.ts	(rejected hunks)
+@@ -37,6 +37,20 @@ export interface LoginResponse {
+   usuario: UsuarioFromBackend;
+ }
+ 
++// ─── Recuperación de contraseña ────────────────────────────────────────────
++export interface SolicitarRecuperacionRequest {
++  correo: string;
++}
++
++export interface RestablecerPasswordRequest {
++  token: string;
++  nueva_contrasena: string;
++}
++
++export interface MensajeResponse {
++  mensaje: string;
++}
++
+ // ─── Usuario de sesión (transformado del backend) ─────────────────────────────
+ export interface LoggedUser {
+   id_usuario: number;
