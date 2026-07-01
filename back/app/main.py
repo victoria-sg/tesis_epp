@@ -16,6 +16,7 @@ from app.routers.conteo_zona_router import router as conteo_zona_router
 from app.routers.stream_router import router as stream_router
 from app.routers.system_router import router as system_router
 from app.routers.deteccion_router import router as deteccion_router
+from app.routers.stats_router import router as stats_router
 
 app = FastAPI(
     title="EPP Monitor API",
@@ -23,7 +24,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# ─── CORS ──────────────────────────────────────────────────────────────────────
+# ─── CORS ─────────────────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -46,6 +47,7 @@ app.include_router(conteo_zona_router)
 app.include_router(stream_router)
 app.include_router(system_router)
 app.include_router(deteccion_router)
+app.include_router(stats_router)
 
 
 # ─── Inicialización de base de datos ──────────────────────────────────────────

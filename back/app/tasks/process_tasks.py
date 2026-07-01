@@ -115,11 +115,48 @@ def _guardar_ultimo_resultado(camara_id: int, resultado: dict):
 def _guardar_alerta(camara_id: int, frame_b64: str, resultado: dict):
     try:
         from app.models.alerta import Alerta
+        import base64
+        import io
+        from PIL import Image, ImageDraw, ImageFont
 
-        frame_data_url = (
-            frame_b64 if frame_b64.startswith("data:image")
-            else f"data:image/jpeg;base64,{frame_b64}"
-        )
+        # Decodificar frame
+        frame_b64_clean = frame_b64.split(",", 1)[1] if "," in frame_b64 else frame_b64
+        frame_bytes = base64.b64decode(frame_b64_clean)
+        imagen = Image.open(io.BytesIO(frame_bytes)).convert("RGB")
+        draw = ImageDraw.Draw(imagen)
+
+        ancho, alto = imagen.size
+
+        COLORES = {
+            "infraccion": (239, 68, 68),   # rojo
+            "normal": (34, 197, 94),        # verde
+        }
+        CLASES_INFRACCION = {"NO-Hardhat", "NO-Safety Vest", "NO-Mask"}
+
+        for det in resultado.get("detecciones", []):
+            bbox = det.get("bbox", [])
+            if len(bbox) < 4:
+                continue
+
+            x1, y1, x2, y2 = [int(b) for b in bbox]
+            nombre = det.get("nombre_clase", "")
+            confianza = det.get("confianza", 0)
+            color = COLORES["infraccion"] if nombre in CLASES_INFRACCION else COLORES["normal"]
+
+            # Recuadro
+            draw.rectangle([x1, y1, x2, y2], outline=color, width=3)
+
+            # Etiqueta
+            etiqueta = f"{nombre} {int(confianza * 100)}%"
+            label_w = len(etiqueta) * 7
+            label_h = 18
+            draw.rectangle([x1, y1 - label_h, x1 + label_w, y1], fill=color)
+            draw.text((x1 + 3, y1 - label_h + 2), etiqueta, fill=(255, 255, 255))
+
+        # Re-encodificar a base64
+        buffer = io.BytesIO()
+        imagen.save(buffer, format="JPEG", quality=85)
+        frame_con_overlay = "data:image/jpeg;base64," + base64.b64encode(buffer.getvalue()).decode()
 
         db = SessionLocal()
         alerta = Alerta(
@@ -127,12 +164,12 @@ def _guardar_alerta(camara_id: int, frame_b64: str, resultado: dict):
             fecha_hora_deteccion=datetime.now(),
             segundos_transcurridos=0,
             estado_alerta="Pendiente",
-            captura_frame=frame_data_url,
+            captura_frame=frame_con_overlay,
         )
         db.add(alerta)
         db.commit()
         db.refresh(alerta)
-        print(f"[🚨] Alerta #{alerta.id_alerta} creada automáticamente para cámara {camara_id}")
+        print(f"[🚨] Alerta #{alerta.id_alerta} creada con overlay para cámara {camara_id}")
         db.close()
     except Exception as e:
         print(f"[❌] Error guardando alerta: {e}")

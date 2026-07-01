@@ -12,17 +12,10 @@ import { SearchBar } from "../../components/crud/SearchBar";
 import { StatusBadge } from "../../components/crud/StatusBadge";
 import { useCrud } from "../../hooks/useCrud";
 import { useCrudForm } from "../../hooks/useCrudForm";
-import type {
-  Sirena,
-  SirenaCreate,
-  SirenaUpdate,
-} from "../../models/sirena.model";
+import type { Sirena, SirenaCreate, SirenaUpdate } from "../../models/sirena.model";
 import { SIRENA_ESTADOS } from "../../models/sirena.model";
 import { sirenaService } from "../../services/sirena.service";
-import {
-  sirenaSchema,
-  type SirenaFormValues,
-} from "../../validators/sirena.schema";
+import { sirenaSchema, type SirenaFormValues } from "../../validators/sirena.schema";
 
 const INITIAL_VALUES: SirenaFormValues = {
   id_zona: 0,
@@ -48,10 +41,7 @@ export const SirenasView = () => {
   const { formik, handleSubmit: handleFormSubmit } =
     useCrudForm<SirenaFormValues>({
       isEditing: crud.isEditing,
-      editingItem: crud.editingItem as unknown as Record<
-        string,
-        unknown
-      > | null,
+      editingItem: crud.editingItem as unknown as Record<string, unknown> | null,
       validationSchema: sirenaSchema,
       initialValues: INITIAL_VALUES,
       fieldMapping: FIELD_MAPPING,
@@ -130,15 +120,15 @@ export const SirenasView = () => {
   return (
     <div>
       <PageHeader
-        title="Sirenas"
-        subtitle="Administre las sirenas del sistema por zona"
+        title="Bocinas"
+        subtitle="Administre las bocinas del sistema por zona"
         action={
           <button
             onClick={crud.openCreateModal}
             className="h-10 px-4 rounded-md bg-gradient-to-r from-[#f59e0b] to-[#d97706] text-white hover:from-[#d97706] hover:to-[#b45309] flex items-center gap-2 shadow-lg shadow-amber-500/30 transition-all"
             style={{ fontSize: 13, fontWeight: 600 }}
           >
-            <Plus size={16} /> Nueva Sirena
+            <Plus size={16} /> Nueva Bocina
           </button>
         }
       />
@@ -146,7 +136,7 @@ export const SirenasView = () => {
       <div className="bg-white border border-[#e5e5e5] rounded-lg">
         <div className="px-5 py-4 border-b border-[#ececec] flex items-center justify-between gap-4">
           <div style={{ fontSize: 15, fontWeight: 600, color: "#000" }}>
-            Sirenas{" "}
+            Bocinas{" "}
             <span style={{ color: "#6b6b6b", fontWeight: 400 }}>
               · {filteredItems.length}
             </span>
@@ -154,7 +144,7 @@ export const SirenasView = () => {
           <SearchBar
             value={crud.filters.query}
             onChange={crud.handleSearch}
-            placeholder="Buscar sirena…"
+            placeholder="Buscar bocina…"
           />
         </div>
 
@@ -178,7 +168,7 @@ export const SirenasView = () => {
       <CustomModal
         open={crud.modalOpen}
         onClose={crud.closeModal}
-        title={crud.isEditing ? "Editar Sirena" : "Nueva Sirena"}
+        title={crud.isEditing ? "Editar Bocina" : "Nueva Bocina"}
       >
         <form onSubmit={handleFormSubmit} className="space-y-4">
           <CustomSelect
@@ -195,9 +185,9 @@ export const SirenasView = () => {
             touched={formik.touched.id_zona as boolean | undefined}
           />
           <CustomInput
-            label="Código de Sirena"
+            label="Código de Bocina"
             name="codigo_sirena"
-            placeholder="Ej: SIR-ZA-01"
+            placeholder="Ej: BOC-ZA-01"
             value={formik.values.codigo_sirena}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
@@ -217,9 +207,7 @@ export const SirenasView = () => {
           <CustomSelect
             label="Estado del Dispositivo"
             value={formik.values.estado_dispositivo ?? ""}
-            onChange={(v) =>
-              formik.setFieldValue("estado_dispositivo", v || null)
-            }
+            onChange={(v) => formik.setFieldValue("estado_dispositivo", v || null)}
             options={SIRENA_ESTADOS.map((e) => ({
               value: e,
               label: e.charAt(0).toUpperCase() + e.slice(1),
@@ -229,9 +217,7 @@ export const SirenasView = () => {
             touched={formik.touched.estado_dispositivo as boolean | undefined}
           />
           {crud.error && (
-            <div className="text-[12px] text-red-600 text-center">
-              {crud.error}
-            </div>
+            <div className="text-[12px] text-red-600 text-center">{crud.error}</div>
           )}
           <div className="flex justify-end gap-3 pt-2">
             <button
@@ -246,11 +232,7 @@ export const SirenasView = () => {
               disabled={crud.submitLoading}
               className="h-10 px-4 rounded-lg bg-gradient-to-r from-[#f59e0b] to-[#d97706] text-white hover:from-[#d97706] hover:to-[#b45309] text-sm font-semibold transition-colors disabled:opacity-50 shadow-lg shadow-amber-500/30"
             >
-              {crud.submitLoading
-                ? "Guardando..."
-                : crud.isEditing
-                  ? "Actualizar"
-                  : "Crear"}
+              {crud.submitLoading ? "Guardando..." : crud.isEditing ? "Actualizar" : "Crear"}
             </button>
           </div>
         </form>
@@ -258,8 +240,8 @@ export const SirenasView = () => {
 
       <ConfirmDialog
         open={crud.deleteConfirmOpen}
-        title="Eliminar Sirena"
-        message="¿Estás seguro de eliminar esta sirena? Esta acción no se puede deshacer."
+        title="Eliminar Bocina"
+        message="¿Estás seguro de eliminar esta bocina? Esta acción no se puede deshacer."
         onConfirm={crud.handleDelete}
         onCancel={crud.cancelDelete}
         loading={crud.deleteLoading}

@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/stream", tags=["Streaming"])
 
 _broadcast_tasks: dict[int, asyncio.Task] = {}
+_frame_counters: dict[int, int] = {}
 
 
 @router.websocket("/{camara_id}")
@@ -82,7 +83,8 @@ async def stream_fallback(
             await ws_manager.broadcast_frame(target_id, data_url)
             frame_count += 1
 
-            if frame_count % 15 == 0:
+            # Procesa 1 de cada 5 frames (antes era 1 de cada 15)
+            if frame_count % 5 == 0:
                 base64_data = data_url.split(",", 1)[1] if "," in data_url else data_url
                 _enqueue_for_processing(target_id, base64_data)
 
@@ -130,6 +132,7 @@ def _start_broadcast(camara_id: int, reader):
 
     async def _broadcast_loop():
         logger.info(f"[📡] Broadcast iniciado para cámara {camara_id}")
+        counter = 0
         try:
             while stream_manager.get_rtsp_stream(camara_id) is not None:
                 frame = await reader.read_frame()
@@ -140,7 +143,10 @@ def _start_broadcast(camara_id: int, reader):
                 frame_b64 = await reader.encode_jpeg(frame)
                 full_message = f"data:image/jpeg;base64,{frame_b64}"
                 await ws_manager.broadcast_frame(camara_id, full_message)
-                _enqueue_for_processing(camara_id, frame_b64)
+
+                counter += 1
+                if counter % 5 == 0:
+                    _enqueue_for_processing(camara_id, frame_b64)
 
                 fps = settings.STREAM_FPS
                 if not ws_manager.is_being_watched(camara_id):
@@ -170,14 +176,10 @@ def _stop_broadcast_if_unused(camara_id: int):
 
 
 def _enqueue_for_processing(camara_id: int, frame_b64: str):
-    import random
-    if random.randint(1, 15) != 1:
-        return
-
+    """Encola el frame para procesamiento con YOLO sin delay artificial."""
     from app.tasks.process_tasks import process_frame
     from datetime import datetime
 
     process_frame.apply_async(
         args=[camara_id, frame_b64, datetime.now().isoformat()],
-        countdown=settings.PROCESSING_DELAY_MINUTES * 60,
     )

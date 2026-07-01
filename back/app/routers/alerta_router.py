@@ -15,6 +15,57 @@ from datetime import datetime, date
 
 router = APIRouter(prefix="/alertas", tags=["Alertas"])
 
+CLASES_INFRACCION = {"NO-Hardhat", "NO-Safety Vest", "NO-Mask"}
+
+
+def _aplicar_overlay(frame_b64: str, detecciones: list) -> str:
+    """Dibuja bounding boxes sobre el frame y devuelve el resultado en base64."""
+    try:
+        import base64
+        import io
+        from PIL import Image, ImageDraw
+
+        frame_b64_clean = frame_b64.split(",", 1)[1] if "," in frame_b64 else frame_b64
+        imagen = Image.open(io.BytesIO(base64.b64decode(frame_b64_clean))).convert("RGB")
+        draw = ImageDraw.Draw(imagen)
+
+        for det in detecciones:
+            bbox = det.get("bbox", [])
+            if len(bbox) < 4:
+                continue
+            x1, y1, x2, y2 = [int(b) for b in bbox]
+            nombre = det.get("nombre_clase", "")
+            confianza = det.get("confianza", 0)
+            color = (239, 68, 68) if nombre in CLASES_INFRACCION else (34, 197, 94)
+            draw.rectangle([x1, y1, x2, y2], outline=color, width=3)
+            etiqueta = f"{nombre} {int(confianza * 100)}%"
+            label_w = len(etiqueta) * 7
+            draw.rectangle([x1, y1 - 18, x1 + label_w, y1], fill=color)
+            draw.text((x1 + 3, y1 - 16), etiqueta, fill=(255, 255, 255))
+
+        buffer = io.BytesIO()
+        imagen.save(buffer, format="JPEG", quality=85)
+        return "data:image/jpeg;base64," + base64.b64encode(buffer.getvalue()).decode()
+    except Exception:
+        return frame_b64  # si falla el overlay, devuelve el frame original
+
+
+def _obtener_detecciones_redis(camara_id: int) -> list:
+    """Obtiene las últimas detecciones guardadas en Redis para esa cámara."""
+    try:
+        import json
+        import redis as redis_lib
+        from app.core.config import settings
+
+        r = redis_lib.from_url(settings.REDIS_URL)
+        data = r.get(f"deteccion:ultima:{camara_id}")
+        if data:
+            resultado = json.loads(data)
+            return resultado.get("detecciones", [])
+    except Exception:
+        pass
+    return []
+
 
 @router.get("/", response_model=list[AlertaResponse])
 def list_alertas(
@@ -62,6 +113,14 @@ def capturar_incidencia(
     db: Session = Depends(get_db),
     _: Usuario = Depends(get_current_user),
 ):
+    """
+    Captura manual desde el dashboard. Si hay detecciones recientes en Redis
+    para esa cámara, las dibuja sobre el frame antes de guardar.
+    """
+    detecciones = _obtener_detecciones_redis(data.id_camara)
+    if detecciones and data.frame_base64:
+        data.frame_base64 = _aplicar_overlay(data.frame_base64, detecciones)
+
     return alerta_service.crear_desde_captura(db, data)
 
 

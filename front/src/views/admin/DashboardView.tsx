@@ -8,12 +8,14 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { DashboardCharts } from "../../components/DashboardCharts";
 import { VideoStream } from "../../components/VideoStream";
 import { useStreamContext } from "../../context/StreamContext";
 import type { Camara } from "../../models/camara.model";
 import { capturarIncidencia } from "../../services/alerta.service";
 import { camaraService } from "../../services/camara.service";
-import { getReporteAlertas } from "../../services/reporte.service";
+import type { RootState } from "../../store";
 
 export const DashboardView = () => {
   const [camaras, setCamaras] = useState<Camara[]>([]);
@@ -24,6 +26,7 @@ export const DashboardView = () => {
   const { frames } = useStreamContext();
   const [capturandoIncidencia, setCapturandoIncidencia] = useState(false);
   const [mensajeCaptura, setMensajeCaptura] = useState<string | null>(null);
+  const { user } = useSelector((state: RootState) => state.auth);
 
   const capturarIncidenciaDashboard = async (camaraId: number) => {
     const frame = frames[camaraId];
@@ -40,7 +43,6 @@ export const DashboardView = () => {
         descripcion: "Incidencia reportada desde el Dashboard",
       });
       setMensajeCaptura("✅ Incidencia registrada");
-      // Recargar alertas para actualizar el contador
       cargarAlertas();
     } catch {
       setMensajeCaptura("❌ Error al registrar");
@@ -69,13 +71,10 @@ export const DashboardView = () => {
       .getAll()
       .then((data) => { setCamaras(data); setLoading(false); })
       .catch(() => setLoading(false));
-
     cargarAlertas();
   }, []);
 
-  const camarasOnline = camaras.filter(
-    (c) => c.estado_conexion === "activo",
-  ).length;
+  const camarasOnline = camaras.filter((c) => c.estado_conexion === "activo").length;
 
   return (
     <div>
@@ -224,6 +223,19 @@ export const DashboardView = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Gráficos por rol */}
+      {user && (
+        <div className="mt-8">
+          <div className="mb-3 flex items-center gap-2">
+            <div style={{ fontSize: 17, fontWeight: 600, color: "#000" }}>Estadísticas</div>
+            <span style={{ fontSize: 11, color: "#6b6b6b", background: "#f5f5f5", padding: "2px 8px", borderRadius: 99 }}>
+              {user.rolLabel}
+            </span>
+          </div>
+          <DashboardCharts rol={user.rol} />
         </div>
       )}
 

@@ -36,7 +36,7 @@ const ROLE_NAV_ITEMS: Record<string, NavItem[]> = {
     { path: "/admin/zonas", label: "Zonas", icon: <MapPin size={16} /> },
     { path: "/admin/camaras", label: "Cámaras", icon: <Camera size={16} /> },
     { path: "/admin/tipos-epp", label: "Tipos de EPP", icon: <Shirt size={16} /> },
-    { path: "/admin/sirenas", label: "Sirenas", icon: <Siren size={16} /> },
+    { path: "/admin/sirenas", label: "Bocinas", icon: <Siren size={16} /> },
     { path: "/admin/reportes", label: "Reportes", icon: <FileText size={16} /> },
   ],
   supervisor: [

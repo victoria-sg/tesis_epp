@@ -27,6 +27,8 @@ export default defineConfig({
       "/permisos": { target: "http://localhost:8000", changeOrigin: true },
       "/health": { target: "http://localhost:8000", changeOrigin: true },
       "/system": { target: "http://localhost:8000", changeOrigin: true },
+      "/deteccion": { target: "http://localhost:8000", changeOrigin: true },
+      "/stats": { target: "http://localhost:8000", changeOrigin: true },
     },
   },
 });

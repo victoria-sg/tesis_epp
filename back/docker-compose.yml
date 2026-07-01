@@ -41,7 +41,7 @@ services:
       dockerfile: Dockerfile
     container_name: epp-celery-worker
     restart: unless-stopped
-    command: celery -A app.core.celery_app worker --loglevel=info --concurrency=2
+    command: celery -A app.core.celery_app worker --loglevel=info --pool=solo --concurrency=1
     env_file:
       - .env
     environment:
