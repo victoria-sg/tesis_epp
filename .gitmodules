@@ -1,6 +1,6 @@
 [submodule "back"]
 	path = back
-	url = https://github.com/TU_USUARIO/back.git
+	url = https://github.com/victoria-sg/tesis_epp_back.git
 [submodule "front"]
 	path = front
-	url = https://github.com/TU_USUARIO/front.git
+	url = https://github.com/victoria-sg/tesis_epp_front.git
